@@ -1,10 +1,3 @@
-Perfect observation 👍
-Since we’ve added `style.css` and `script.js` for the **Web Calculator**, we should also reflect that in your `README.md`.
-
-Here’s the updated version with the **CSS & JS files included** in the structure:
-
----
-
 # Cross-Platform Calculator
 
 A calculator application built in **two versions** to demonstrate both desktop and web development skills.
