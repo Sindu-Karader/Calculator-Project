@@ -1,146 +1,289 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Web Calculator</title>
-  <link rel="stylesheet" href="style.css">
-<script src="script.js" defer></script>
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pro Calculator</title>
   <style>
-    body {
-      background: linear-gradient(to right, #141E30, #243B55);
-      font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      color: white;
+    :root{
+      --bg: #0f172a;          /* slate-900 */
+      --panel: #111827;       /* gray-900 */
+      --muted: #334155;       /* slate-600 */
+      --text: #e5e7eb;        /* gray-200 */
+      --accent: #22d3ee;      /* cyan-400 */
+      --accent-2: #a78bfa;    /* violet-400 */
+      --good: #34d399;        /* green-400 */
+      --bad: #f87171;         /* red-400 */
+      --btn: #1f2937;         /* gray-800 */
+      --btn-hover: #374151;   /* gray-700 */
+      --shadow: 0 10px 25px rgba(0,0,0,.35);
+      --radius: 20px;
     }
-    .calculator {
-      background: #1e293b;
-      padding: 20px;
-      border-radius: 15px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-      width: 320px;
+
+    *{box-sizing: border-box}
+    body{
+      margin:0; min-height:100vh; display:grid; place-items:center;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(34,211,238,.15), transparent),
+                  radial-gradient(1200px 600px at 90% 90%, rgba(167,139,250,.15), transparent),
+                  var(--bg);
+      color:var(--text);
     }
-    #display {
-      width: 100%;
-      height: 50px;
-      font-size: 20px;
-      text-align: right;
-      margin-bottom: 10px;
-      padding: 10px;
-      border-radius: 8px;
-      border: none;
-    }
-    .buttons {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-    }
-    button {
-      padding: 20px;
-      font-size: 18px;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-    button:hover { opacity: 0.8; }
-    .history {
-      margin-top: 15px;
-      background: #334155;
-      padding: 10px;
-      border-radius: 10px;
-      max-height: 150px;
-      overflow-y: auto;
-      font-size: 14px;
-    }
+
+    .app{ width:min(900px, 96vw); display:grid; gap:16px; grid-template-columns: 1fr 320px; align-items:start; }
+    @media (max-width: 860px){ .app{ grid-template-columns: 1fr; } .history{ order: 2 } }
+
+    .calc{ background:linear-gradient(180deg, #0b1220, #0b1220); border:1px solid #1f2937; border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden }
+
+    .header{ display:flex; align-items:center; justify-content:space-between; padding:16px 18px; border-bottom:1px solid #1f2937; background:rgba(255,255,255,.02) }
+    .brand{ display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:.3px }
+    .brand i{ width:10px; height:10px; background:conic-gradient(from 0deg, var(--accent), var(--accent-2)); border-radius:50% }
+    .actions{ display:flex; gap:8px }
+    .btn{ border:none; background:var(--btn); color:var(--text); padding:10px 12px; border-radius:12px; cursor:pointer; transition:.2s transform, .2s background-color; font-weight:600 }
+    .btn:hover{ background:var(--btn-hover) }
+
+    .display{ padding:18px; display:grid; gap:6px; background: #0b1220 }
+    .expr{ width:100%; font-size: clamp(22px, 4.5vw, 28px); padding:12px 14px; border-radius:14px; background:#0a0f1a; border:1px solid #1f2937; color:var(--text); }
+    .expr[readonly]{ user-select: all }
+    .hint{ color:#9ca3af; font-size:12px }
+
+    .keys{ padding:18px; display:grid; gap:10px; grid-template-columns: repeat(4, 1fr); background: rgba(255,255,255,.02); border-top:1px solid #1f2937 }
+    .key{ padding:16px 0; border-radius:14px; background:var(--btn); border:1px solid #1f2937; font-size:18px; font-weight:700; text-align:center; cursor:pointer; user-select:none; transition:.15s transform, .2s background-color }
+    .key:hover{ background:var(--btn-hover) }
+    .key:active{ transform:scale(.98) }
+    .key.op{ color:var(--accent) }
+    .key.eq{ background:linear-gradient(90deg, var(--accent), var(--accent-2)); color:#0a0f1a; border:none }
+    .key.danger{ color:var(--bad) }
+
+    .history{ background:linear-gradient(180deg, #0b1220, #0b1220); border:1px solid #1f2937; border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden }
+    .history header{ padding:14px 16px; border-bottom:1px solid #1f2937; display:flex; align-items:center; justify-content:space-between }
+    .history header h3{ margin:0; font-size:16px; letter-spacing:.3px }
+    .limit{ font-size:12px; color:#9ca3af }
+    .history-list{ max-height:460px; overflow:auto }
+    .item{ padding:12px 16px; border-bottom:1px solid #1f2937; display:grid; gap:6px }
+    .item:last-child{ border-bottom:none }
+    .expr-text{ color:#9ca3af; font-size:13px; word-break: break-word }
+    .res-text{ font-size:16px; font-weight:700; color:var(--good) }
+    .item .mini{ display:flex; gap:8px }
+    .mini button{ background:transparent; border:1px solid #334155; color:#9ca3af; padding:4px 8px; border-radius:10px; cursor:pointer }
+    .mini button:hover{ color:var(--text); border-color:#64748b }
+
+    .empty{ padding:14px 16px; color:#9ca3af }
+    .footer{ padding:12px 16px; display:flex; justify-content:space-between; gap:8px }
+    .footer .btn{ width:100% }
   </style>
 </head>
 <body>
-  <div class="calculator">
-    <input type="text" id="display" disabled>
-    <div class="buttons">
-      <button onclick="appendValue('7')">7</button>
-      <button onclick="appendValue('8')">8</button>
-      <button onclick="appendValue('9')">9</button>
-      <button onclick="appendValue('/')">/</button>
+  <main class="app">
+    <!-- Calculator -->
+    <section class="calc" aria-label="Calculator">
+      <div class="header">
+        <div class="brand"><i></i> <span>Pro Calculator</span></div>
+        <div class="actions">
+          <button class="btn" id="themeToggle" title="Toggle theme">Theme</button>
+          <button class="btn" id="copyExpr" title="Copy expression">Copy</button>
+        </div>
+      </div>
 
-      <button onclick="appendValue('4')">4</button>
-      <button onclick="appendValue('5')">5</button>
-      <button onclick="appendValue('6')">6</button>
-      <button onclick="appendValue('*')">x</button>
+      <div class="display">
+        <input id="display" class="expr" placeholder="0" readonly />
+        <div class="hint">Tip: type <strong>xx</strong> for exponentiation (becomes <code>**</code>). Keyboard supported.</div>
+      </div>
 
-      <button onclick="appendValue('1')">1</button>
-      <button onclick="appendValue('2')">2</button>
-      <button onclick="appendValue('3')">3</button>
-      <button onclick="appendValue('-')">-</button>
+      <div class="keys" role="group" aria-label="Calculator keys">
+        <!-- Row 1 -->
+        <div class="key danger" data-key="AC">AC</div>
+        <div class="key danger" data-key="C">C</div>
+        <div class="key op" data-key="(">(</div>
+        <div class="key op" data-key=")">)</div>
+        <!-- Row 2 -->
+        <div class="key" data-key="7">7</div>
+        <div class="key" data-key="8">8</div>
+        <div class="key" data-key="9">9</div>
+        <div class="key op" data-key="/">/</div>
+        <!-- Row 3 -->
+        <div class="key" data-key="4">4</div>
+        <div class="key" data-key="5">5</div>
+        <div class="key" data-key="6">6</div>
+        <div class="key op" data-key="x">x</div>
+        <!-- Row 4 -->
+        <div class="key" data-key="1">1</div>
+        <div class="key" data-key="2">2</div>
+        <div class="key" data-key="3">3</div>
+        <div class="key op" data-key="-">-</div>
+        <!-- Row 5 -->
+        <div class="key" data-key="0">0</div>
+        <div class="key op" data-key=".">.</div>
+        <div class="key eq" data-key="=">=</div>
+        <div class="key op" data-key="+">+</div>
+      </div>
+    </section>
 
-      <button onclick="appendValue('0')">0</button>
-      <button onclick="appendValue('.')">.</button>
-      <button onclick="calculate()">=</button>
-      <button onclick="appendValue('+')">+</button>
-
-      <button onclick="clearDisplay()">C</button>
-      <button onclick="appendValue('(')">(</button>
-      <button onclick="appendValue(')')">)</button>
-      <button onclick="allClear()">AC</button>
-    </div>
-
-    <div class="history" id="history"></div>
-  </div>
+    <!-- History -->
+    <aside class="history" aria-label="History">
+      <header>
+        <h3>History</h3>
+        <div class="limit" id="limitInfo"></div>
+      </header>
+      <div id="historyList" class="history-list" aria-live="polite"></div>
+      <div class="footer">
+        <button class="btn" id="clearHistory">Clear History</button>
+        <button class="btn" id="exportHistory">Export JSON</button>
+      </div>
+    </aside>
+  </main>
 
   <script>
-    let display = document.getElementById('display');
-    let historyBox = document.getElementById('history');
-    let history = JSON.parse(localStorage.getItem('calcHistory')) || [];
+    // =================== Config =================== //
+    const HISTORY_LIMIT = 25; // keep the most recent N entries
+    const STORAGE_KEY = 'proCalcHistory_v1';
 
-    function updateHistory() {
-      historyBox.innerHTML = history.slice(-25).map(h => `<div>${h}</div>`).join('');
-      localStorage.setItem('calcHistory', JSON.stringify(history));
-    }
+    // =================== State =================== //
+    const display = document.getElementById('display');
+    const historyList = document.getElementById('historyList');
+    const limitInfo = document.getElementById('limitInfo');
 
-    function appendValue(value) {
-      display.value += value;
-    }
+    limitInfo.textContent = `Last ${HISTORY_LIMIT} results`;
 
-    function clearDisplay() {
-      display.value = display.value.slice(0, -1);
-    }
+    // Load history from localStorage
+    let history = [];
+    try {
+      history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      if (!Array.isArray(history)) history = [];
+    } catch { history = []; }
 
-    function allClear() {
-      display.value = '';
-    }
+    // =================== Utilities =================== //
+    const sanitize = (str) => {
+      // Allow digits, + - * / ( ) . x and whitespace
+      const ok = /^[0-9+\-*/().x\s]*$/;
+      return ok.test(str);
+    };
 
-    function calculate() {
-      try {
-        let expression = display.value.replace(/xx/g, '**');
-        let result = eval(expression);
-        history.push(display.value + " = " + result);
-        display.value = result;
-        updateHistory();
-      } catch {
-        display.value = "Error";
+    const normalizeForEval = (expr) => expr.replace(/xx/g, '**').replace(/x/g, '*');
+
+    const updateDisplay = (text) => {
+      display.value = text || '';
+    };
+
+    const pushHistory = (expr, result) => {
+      const item = { expr, result, ts: Date.now() };
+      history.unshift(item); // newest first
+      if (history.length > HISTORY_LIMIT) history = history.slice(0, HISTORY_LIMIT);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+      renderHistory();
+    };
+
+    const renderHistory = () => {
+      if (!history.length){
+        historyList.innerHTML = `<div class="empty">No items yet. Solve something!</div>`;
+        return;
       }
-    }
+      historyList.innerHTML = history.map((h, idx) => {
+        const date = new Date(h.ts).toLocaleString();
+        return `<div class="item" data-idx="${idx}">
+          <div class="expr-text">${h.expr}</div>
+          <div class="res-text">= ${h.result}</div>
+          <div class="mini">
+            <button data-action="reuse">Reuse</button>
+            <button data-action="copy">Copy</button>
+            <span class="time" aria-hidden="true" style="margin-left:auto;color:#6b7280">${date}</span>
+          </div>
+        </div>`;
+      }).join('');
+    };
+
+    const calculate = () => {
+      const expr = display.value.trim();
+      if (!expr) return;
+      if (!sanitize(expr)){
+        alert('Invalid characters in expression.');
+        return;
+      }
+      const toEval = normalizeForEval(expr);
+      try{
+        // eslint-disable-next-line no-eval
+        const result = eval(toEval);
+        updateDisplay(`${expr} = ${result}`);
+        pushHistory(expr, result);
+      }catch(err){
+        alert('Please enter a valid equation.');
+      }
+    };
+
+    const append = (tok) => {
+      const current = display.value;
+      if (/=/.test(current)) { // if previous result shown, start new expr
+        updateDisplay('');
+      }
+      if (tok === 'AC'){ updateDisplay(''); return; }
+      if (tok === 'C'){ updateDisplay(current.slice(0, -1)); return; }
+      if (tok === '='){ calculate(); return; }
+      updateDisplay(current + tok);
+    };
+
+    // =================== Events =================== //
+    document.querySelectorAll('.key').forEach(k => {
+      k.addEventListener('click', () => append(k.dataset.key));
+    });
 
     // Keyboard support
-    document.addEventListener('keydown', (e) => {
-      if (!isNaN(e.key) || ['+', '-', '*', '/', '.', '(', ')'].includes(e.key)) {
-        appendValue(e.key);
-      } else if (e.key === 'Enter') {
-        calculate();
-      } else if (e.key === 'Backspace') {
-        clearDisplay();
-      } else if (e.key === 'Escape') {
-        allClear();
+    window.addEventListener('keydown', (e) => {
+      const k = e.key;
+      if (k === 'Enter'){ e.preventDefault(); calculate(); return; }
+      if (k === 'Escape'){ updateDisplay(''); return; }
+      if (k === 'Backspace'){ const v = display.value; updateDisplay(v.slice(0,-1)); return; }
+      if (/^[0-9+\-*/().x]$/.test(k)){ append(k); }
+      if (k === '^'){ append('xx'); } // optional alias: caret -> xx
+    });
+
+    // History interactions
+    historyList.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      const wrap = e.target.closest('.item');
+      if (!btn || !wrap) return;
+      const idx = Number(wrap.dataset.idx);
+      const item = history[idx];
+      const action = btn.dataset.action;
+      if (action === 'reuse'){ updateDisplay(item.expr); }
+      if (action === 'copy'){
+        navigator.clipboard.writeText(`${item.expr} = ${item.result}`);
       }
     });
 
-    updateHistory();
+    document.getElementById('clearHistory').addEventListener('click', () => {
+      if (!history.length) return;
+      if (confirm('Clear history?')){
+        history = [];
+        localStorage.setItem(STORAGE_KEY, '[]');
+        renderHistory();
+      }
+    });
+
+    document.getElementById('exportHistory').addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(history, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'calculator-history.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('copyExpr').addEventListener('click', () => {
+      if (!display.value) return;
+      navigator.clipboard.writeText(display.value);
+    });
+
+    // Simple theme toggle: swap two accents
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const root = document.documentElement;
+      const a = getComputedStyle(root).getPropertyValue('--accent');
+      const b = getComputedStyle(root).getPropertyValue('--accent-2');
+      root.style.setProperty('--accent', b);
+      root.style.setProperty('--accent-2', a);
+    });
+
+    // Initial render
+    renderHistory();
   </script>
 </body>
 </html>
